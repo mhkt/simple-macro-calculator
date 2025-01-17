@@ -135,8 +135,8 @@
       const fatLowCalories = fatLow * 9;
       const fatHighCalories = fatHigh * 9;
 
-      const carbsLow = (calorieGoal - (proteinCalories + fatLowCalories)) / 4;
-      const carbsHigh = (calorieGoal - (proteinCalories + fatHighCalories)) / 4;
+      const carbsLow = (calorieGoal - (proteinCalories + fatHighCalories)) / 4;
+      const carbsHigh = (calorieGoal - (proteinCalories + fatLowCalories)) / 4;
 
       return {
         maintenanceCalories: formatNumber(maintenanceCalories),

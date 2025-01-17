@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calorie & Macro Calculator</title>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.7/css/pico.min.css">
+  <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css">
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+    table {
+      width: 100%;
+      text-align: left;
+    }
+    th {
+      font-size: 1.2rem;
+    }
+    td {
+      padding: 0.5rem;
+    }
+    .results td {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Calorie & Macro Calculator</h1>
+    <form id="calculatorForm">
+      <table>
+        <thead>
+          <tr>
+            <th>Input</th>
+            <th>Output</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <label for="bodyWeight">Body Weight (lbs)</label>
+              <input type="number" id="bodyWeight" placeholder="Enter weight" required />
+            </td>
+            <td rowspan="4" id="results">
+              <label>Maintenance Calories</label>
+              <span id="maintenanceCalories">-</span>
+              <label>Calorie Goal</label>
+              <span id="calorieGoal" class="pico-color-purple-500">-</span>
+              <label>Protein</label>
+              <span id="protein">-</span>
+              <label>Fat (low-high)</label>
+              <span id="fat">-</span>
+              <label>Carbs (low-high)</label>
+              <span id="carbs">-</span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <label for="bodyFat">Body Fat (%)</label>
+              <input type="number" id="bodyFat" placeholder="Enter body fat %" required />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <label for="goalType">Goal</label>
+              <select id="goalType" required>
+                <option value="lose_20_more">Lose 20+ lbs</option>
+                <option value="lose_5_20" selected>Lose 5-20 lbs</option>
+                <option value="lose_5_less">Lose < 5 lbs</option>
+                <option value="gain_10_more">Gain 10+ lbs</option>
+                <option value="gain_5_10">Gain 5-10 lbs</option>
+              </select>
+              <label for="diet">Diet Type</label>
+              <select id="diet" required>
+                <option value="omnivore">Omnivore</option>
+                <option value="vegetarian">Vegetarian</option>
+                <option value="vegan">Vegan</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" id="calculateButton">Calculate</button>
+    </form>
+  </main>
+
+  <script>
+    // Function to format numbers for display
+    function formatNumber(num) {
+      return Math.round(num).toLocaleString();
+    }
+
+    // Function to calculate calorie and macronutrient goals
+    function calculateGoals(bodyWeight, bodyFatPercentage, goalType, diet) {
+      const leanMassPercentage = (100 - bodyFatPercentage) / 100;
+      const leanBodyMassLbs = bodyWeight * leanMassPercentage;
+      const leanBodyMassKg = leanBodyMassLbs / 2.2;
+      const bmr = leanBodyMassKg * 21.6 + 370;
+      const maintenanceCalories = bmr * 1.55;
+
+      let calorieGoal;
+
+      // Determine the calorie goal multiplier based on the goal type
+      switch (goalType) {
+        case "lose_20_more":
+          calorieGoal = maintenanceCalories * 0.67;
+          break;
+        case "lose_5_20":
+          calorieGoal = maintenanceCalories * 0.72;
+          break;
+        case "lose_5_less":
+          calorieGoal = maintenanceCalories * 0.77;
+          break;
+        case "gain_10_more":
+          calorieGoal = bodyWeight * 20;
+          break;
+        case "gain_5_10":
+          calorieGoal = bodyWeight * 18;
+          break;
+        default:
+          calorieGoal = maintenanceCalories; // Fallback to maintenance
+      }
+
+      const proteinMultiplier = diet === "vegan" ? 0.82 : diet === "vegetarian" ? 1.12 : 1.22;
+      const proteinGrams = proteinMultiplier * leanBodyMassLbs;
+
+      const fatLow = calorieGoal / 45;
+      const fatHigh = calorieGoal / 27;
+
+      const proteinCalories = proteinGrams * 4;
+      const fatLowCalories = fatLow * 9;
+      const fatHighCalories = fatHigh * 9;
+
+      const carbsLow = (calorieGoal - (proteinCalories + fatLowCalories)) / 4;
+      const carbsHigh = (calorieGoal - (proteinCalories + fatHighCalories)) / 4;
+
+      return {
+        maintenanceCalories: formatNumber(maintenanceCalories),
+        calorieGoal: formatNumber(calorieGoal),
+        macros: {
+          protein: formatNumber(proteinGrams),
+          fat: {
+            low: formatNumber(fatLow),
+            high: formatNumber(fatHigh),
+          },
+          carbs: {
+            low: formatNumber(carbsLow),
+            high: formatNumber(carbsHigh),
+          },
+        },
+      };
+    }
+
+    // Handle button click
+    document.getElementById("calculateButton").addEventListener("click", () => {
+      const bodyWeight = parseFloat(document.getElementById("bodyWeight").value);
+      const bodyFat = parseFloat(document.getElementById("bodyFat").value);
+      const goalType = document.getElementById("goalType").value;
+      const diet = document.getElementById("diet").value;
+
+      if (!bodyWeight || !bodyFat) {
+        alert("Please enter valid inputs for body weight and body fat percentage.");
+        return;
+      }
+
+      const results = calculateGoals(bodyWeight, bodyFat, goalType, diet);
+
+      // Display results
+      document.getElementById("maintenanceCalories").textContent = `${results.maintenanceCalories} kcal`;
+      document.getElementById("calorieGoal").textContent = `${results.calorieGoal} kcal`;
+      document.getElementById("protein").textContent = `${results.macros.protein} g`;
+      document.getElementById("fat").textContent = `${results.macros.fat.low} - ${results.macros.fat.high} g`;
+      document.getElementById("carbs").textContent = `${results.macros.carbs.low} - ${results.macros.carbs.high} g`;
+    });
+  </script>
+</body>
+</html>
